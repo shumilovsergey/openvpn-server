@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  openvpn:
+    image: kylemanna/openvpn
+    container_name: openvpn_server
+    cap_add:
+      - NET_ADMIN  # Needed to manage networking
+    ports:
+      - "8388:8388"  # OpenVPN listens on UDP port 1194 by default
+    volumes:
+      - ./openvpn-data:/etc/openvpn  # Persistent storage for configuration and certificates
+    environment:
+      - TZ=RU  # Set the timezone (change as needed)
+    stdin_open: true  # Keep the container open for interactive commands
+    tty: true  # Allocate a pseudo-TTY for interaction
+
+    # coment after init
+    entrypoint: ["/bin/sh", "-c", "trap : TERM INT; sleep infinity & wait"]
+
+    
+    restart: unless-stopped
+
+volumes:
+  openvpn-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/openvpn-data
+      o: bind
+
+# Usage:
+# 1. Start the OpenVPN server using 'docker-compose up -d'.
+
+# 2. Connect to the container shell:
+#    docker exec -it openvpn_server bash
+
+# 3. Inside the container, run the following commands to initialize and configure:
+#    ovpn_genconfig -u tcp://YOUR_SERVER_IP:PORT
+#    ovpn_initpki
+
+# 4. To add clients and generate configuration files:
+#    easyrsa build-client-full CLIENT_NAME nopass
+#    ovpn_getclient CLIENT_NAME > /etc/openvpn/CLIENT_NAME.ovpn
+# 5. Exit the container and retrieve client files from the 'openvpn-data' folder in the project root.
