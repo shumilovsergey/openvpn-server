@@ -5,20 +5,24 @@ services:
     image: kylemanna/openvpn
     container_name: openvpn_server
     cap_add:
-      - NET_ADMIN  # Needed to manage networking
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
     ports:
-      - "8388:8388"  # OpenVPN listens on UDP port 1194 by default
+      - "1194:1194"  
     volumes:
-      - ./openvpn-data:/etc/openvpn  # Persistent storage for configuration and certificates
+      - ./openvpn-data:/etc/openvpn
     environment:
-      - TZ=RU  # Set the timezone (change as needed)
-    stdin_open: true  # Keep the container open for interactive commands
-    tty: true  # Allocate a pseudo-TTY for interaction
+      - TZ=RU
+    sysctls:
+      - net.ipv6.conf.default.forwarding=1
+      - net.ipv6.conf.all.forwarding=1
+    stdin_open: true
+    tty: true
 
-    # coment after init
+    # comment after init
     entrypoint: ["/bin/sh", "-c", "trap : TERM INT; sleep infinity & wait"]
-
-    
     restart: unless-stopped
 
 volumes:
@@ -36,7 +40,7 @@ volumes:
 #    docker exec -it openvpn_server bash
 
 # 3. Inside the container, run the following commands to initialize and configure:
-#    ovpn_genconfig -u tcp://YOUR_SERVER_IP:PORT
+#    ovpn_genconfig -u tcp://YOUR_SERVER_IP
 #    ovpn_initpki
 
 # 4. To add clients and generate configuration files:
